@@ -1,9 +1,14 @@
 export const CONFIG = {
+  // Supabase Configuration
+  SUPABASE_URL: process.env.SUPABASE_URL || '',
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+  
+  // Legacy API Configuration (deprecated)
   API_BASE: process.env.API_BASE || 'https://api.zenithnutrition.com',
   MERCHANT_ID: process.env.MERCHANT_ID || 'zenith_store_001',
   KIOSK_AUTH_TOKEN: process.env.KIOSK_AUTH_TOKEN || '',
   KIOSK_ID: process.env.KIOSK_ID || 'kiosk_001',
-  IDLE_TIMEOUT_MINUTES: parseInt(process.env.IDLE_TIMEOUT_MINUTES || '2', 10),
+  IDLE_TIMEOUT_MINUTES: parseInt(process.env.IDLE_TIMEOUT_MINUTES || '5', 10),
   AUTO_RESET_ENABLED: process.env.AUTO_RESET_ENABLED === 'true',
   CLOVER_MINI_ENABLED: process.env.CLOVER_MINI_ENABLED === 'true',
   CLOVER_APP_ID: process.env.CLOVER_APP_ID || '',

@@ -42,7 +42,7 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({ onNavigate }) => {
   }, []);
 
   const handleStartOver = () => {
-    onNavigate('Scan');
+    onNavigate('Home');
   };
 
   return (

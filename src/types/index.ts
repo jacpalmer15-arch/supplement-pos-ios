@@ -51,7 +51,7 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-export type NavigationScreen = 'Scan' | 'Browse' | 'Cart' | 'Checkout' | 'Success';
+export type NavigationScreen = 'Home' | 'Scan' | 'Browse' | 'Cart' | 'Checkout' | 'Success';
 
 export interface IdleTimer {
   isActive: boolean;

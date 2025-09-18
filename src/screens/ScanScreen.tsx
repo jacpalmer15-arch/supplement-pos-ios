@@ -10,7 +10,7 @@ import { BarCodeScanner, BarCodeScannerResult } from 'expo-barcode-scanner';
 import { Header } from '../components/Header';
 import { Button } from '../components/Button';
 import { useCart } from '../context/CartContext';
-import { apiService } from '../services/api';
+import { supabaseService } from '../services/supabase';
 import { NavigationScreen } from '../types';
 import { COLORS, SIZES } from '../constants/theme';
 
@@ -20,16 +20,25 @@ interface ScanScreenProps {
 
 export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [permissionRequested, setPermissionRequested] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const { addItem } = useCart();
 
+  // Don't auto-request permission on mount
   useEffect(() => {
+    // Check current permission status without requesting
     (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      const { status } = await BarCodeScanner.getPermissionsAsync();
       setHasPermission(status === 'granted');
     })();
   }, []);
+
+  const requestCameraPermission = async () => {
+    setPermissionRequested(true);
+    const { status } = await BarCodeScanner.requestPermissionsAsync();
+    setHasPermission(status === 'granted');
+  };
 
   const handleBarCodeScanned = async ({ type, data }: BarCodeScannerResult) => {
     if (scanned) return;
@@ -38,7 +47,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
     setLoading(true);
 
     try {
-      const response = await apiService.getProductByUPC(data);
+      const response = await supabaseService.getProductByUPC(data);
       
       if (response.success && response.data) {
         addItem(response.data);
@@ -76,10 +85,45 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
     );
   };
 
-  if (hasPermission === null) {
+  if (hasPermission === null && !permissionRequested) {
     return (
       <View style={styles.container}>
-        <Header title="Requesting Camera Permission" onHelpPress={handleHelpPress} />
+        <Header 
+          title="Barcode Scanner" 
+          onHelpPress={handleHelpPress}
+          showBackButton
+          onBackPress={() => onNavigate('Browse')}
+        />
+        <View style={styles.centerContent}>
+          <Text style={styles.permissionTitle}>Camera Access Required</Text>
+          <Text style={styles.permissionText}>
+            To scan product barcodes, we need access to your camera.
+          </Text>
+          <Button
+            title="Allow Camera Access"
+            onPress={requestCameraPermission}
+            style={{ marginTop: SIZES.spacing.lg }}
+          />
+          <Button
+            title="Browse Products Instead"
+            variant="outline"
+            onPress={() => onNavigate('Browse')}
+            style={{ marginTop: SIZES.spacing.md }}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  if (hasPermission === null && permissionRequested) {
+    return (
+      <View style={styles.container}>
+        <Header 
+          title="Requesting Camera Permission" 
+          onHelpPress={handleHelpPress}
+          showBackButton
+          onBackPress={() => onNavigate('Browse')}
+        />
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.permissionText}>Requesting camera permission...</Text>
@@ -91,18 +135,27 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
   if (hasPermission === false) {
     return (
       <View style={styles.container}>
-        <Header title="Camera Permission Required" onHelpPress={handleHelpPress} />
+        <Header 
+          title="Camera Permission Denied" 
+          onHelpPress={handleHelpPress}
+          showBackButton
+          onBackPress={() => onNavigate('Browse')}
+        />
         <View style={styles.centerContent}>
+          <Text style={styles.permissionTitle}>Camera Access Denied</Text>
           <Text style={styles.permissionText}>
-            Camera access is required to scan product barcodes.
+            Camera access was denied. You can browse products instead or enable camera access in your device settings.
           </Text>
           <Button
-            title="Request Permission"
-            onPress={async () => {
-              const { status } = await BarCodeScanner.requestPermissionsAsync();
-              setHasPermission(status === 'granted');
-            }}
+            title="Try Again"
+            onPress={requestCameraPermission}
             style={{ marginTop: SIZES.spacing.lg }}
+          />
+          <Button
+            title="Browse Products Instead"
+            variant="outline"
+            onPress={() => onNavigate('Browse')}
+            style={{ marginTop: SIZES.spacing.md }}
           />
         </View>
       </View>
@@ -253,6 +306,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: SIZES.spacing.lg
+  },
+  permissionTitle: {
+    fontSize: SIZES.font.lg,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    textAlign: 'center',
+    marginBottom: SIZES.spacing.sm
   },
   permissionText: {
     fontSize: SIZES.font.md,

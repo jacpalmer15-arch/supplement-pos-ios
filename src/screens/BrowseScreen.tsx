@@ -7,14 +7,16 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  RefreshControl
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../components/Header';
 import { ProductCard } from '../components/ProductCard';
 import { Button } from '../components/Button';
 import { useCart } from '../context/CartContext';
-import { apiService } from '../services/api';
+import { supabaseService } from '../services/supabase';
 import { Product, NavigationScreen } from '../types';
 import { COLORS, SIZES } from '../constants/theme';
 
@@ -25,6 +27,8 @@ interface BrowseScreenProps {
 export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,22 +36,20 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
 
   useEffect(() => {
     filterProducts();
-  }, [searchQuery, products]);
+  }, [searchQuery, products, selectedCategory]);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getProducts();
+      const response = await supabaseService.getProducts();
       
       if (response.success) {
-        const availableProducts = response.data.filter(product => 
-          product.visible_in_kiosk && product.in_stock
-        );
-        setProducts(availableProducts);
+        setProducts(response.data);
       } else {
         Alert.alert(
           'Error Loading Products',
@@ -58,7 +60,7 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
     } catch (error) {
       Alert.alert(
         'Network Error',
-        'Unable to connect to the server. Please check your connection and try again.',
+        'Unable to connect to Supabase. Please check your connection and try again.',
         [{ text: 'OK' }]
       );
     } finally {
@@ -66,25 +68,42 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await supabaseService.getCategories();
+      if (response.success) {
+        setCategories(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProducts();
+    await loadCategories();
     setRefreshing(false);
   };
 
   const filterProducts = () => {
-    if (!searchQuery.trim()) {
-      setFilteredProducts(products);
-      return;
+    let filtered = products;
+
+    // Filter by category if selected
+    if (selectedCategory) {
+      filtered = filtered.filter(product => product.category === selectedCategory);
     }
 
-    const query = searchQuery.toLowerCase().trim();
-    const filtered = products.filter(product =>
-      product.name.toLowerCase().includes(query) ||
-      product.category.toLowerCase().includes(query) ||
-      product.brand?.toLowerCase().includes(query) ||
-      product.sku.toLowerCase().includes(query)
-    );
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query) ||
+        product.brand?.toLowerCase().includes(query) ||
+        product.sku.toLowerCase().includes(query)
+      );
+    }
     
     setFilteredProducts(filtered);
   };
@@ -139,9 +158,48 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
         )}
       </View>
       
+      {categories.length > 0 && (
+        <View style={styles.categoriesContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <TouchableOpacity
+              style={[
+                styles.categoryButton,
+                !selectedCategory && styles.categoryButtonActive
+              ]}
+              onPress={() => setSelectedCategory(null)}
+            >
+              <Text style={[
+                styles.categoryButtonText,
+                !selectedCategory && styles.categoryButtonTextActive
+              ]}>
+                All
+              </Text>
+            </TouchableOpacity>
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category && styles.categoryButtonActive
+                ]}
+                onPress={() => setSelectedCategory(category)}
+              >
+                <Text style={[
+                  styles.categoryButtonText,
+                  selectedCategory === category && styles.categoryButtonTextActive
+                ]}>
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+      
       <View style={styles.resultsInfo}>
         <Text style={styles.resultsText}>
           {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} available
+          {selectedCategory && ` in ${selectedCategory}`}
         </Text>
       </View>
     </View>
@@ -217,7 +275,7 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
       
       <View style={styles.footer}>
         <Button
-          title="Scan Barcode Instead"
+          title="Scan Barcode (Optional)"
           variant="outline"
           size="large"
           onPress={() => onNavigate('Scan')}
@@ -314,5 +372,30 @@ const styles = StyleSheet.create({
   },
   scanButton: {
     width: '100%'
+  },
+  categoriesContainer: {
+    marginBottom: SIZES.spacing.md,
+  },
+  categoryButton: {
+    paddingHorizontal: SIZES.spacing.md,
+    paddingVertical: SIZES.spacing.sm,
+    marginRight: SIZES.spacing.sm,
+    borderRadius: SIZES.radius.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border.light,
+  },
+  categoryButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  categoryButtonText: {
+    fontSize: SIZES.font.sm,
+    color: COLORS.text.primary,
+    fontWeight: '500',
+  },
+  categoryButtonTextActive: {
+    color: COLORS.surface,
+    fontWeight: '600',
   }
 });

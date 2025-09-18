@@ -57,6 +57,14 @@ export const SIZES = {
   },
   
   // Border radius
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 16,
+    xl: 24
+  },
+  
+  // Old radius for backwards compatibility
   radius: {
     sm: 4,
     md: 8,
@@ -72,6 +80,7 @@ export const SIZES = {
     lg: 18,
     xl: 20,
     xxl: 24,
+    xxxl: 32,
     title: 28,
     header: 32
   }
