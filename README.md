@@ -1,28 +1,31 @@
 # Zenith Nutrition Kiosk App
 
-A React Native (Expo) self-checkout kiosk application for Zenith Nutrition stores. This app provides a guest-only checkout experience with barcode scanning, product browsing, cart management, and payment processing.
+A React Native (Expo) self-checkout kiosk application for Zenith Nutrition stores. This app provides a guest-only checkout experience with barcode scanning, product browsing, cart management, and Supabase-powered backend.
 
 ## Features
 
 ### Core Functionality
-- **Barcode Scanning**: Scan product UPCs using device camera (expo-barcode-scanner)
-- **Product Browsing**: Browse and search available products with filtering
+- **Home Screen**: Welcome screen with prominent "Start Shopping" button
+- **Barcode Scanning (Optional)**: Scan product UPCs using device camera - only requests permissions when needed
+- **Product Browsing**: Browse and search available products with category filtering
 - **Cart Management**: Add, remove, and adjust quantities with real-time totals
-- **Checkout Process**: Complete orders with Clover Mini integration (configurable)
+- **Checkout Process**: Complete orders with optional receipt delivery
 - **Guest Checkout Only**: No user registration or staff login required
 
 ### UX Features
 - **Large Touch Targets**: Optimized for kiosk use with finger-friendly UI
-- **Idle Timer**: Auto-reset to scan screen after configurable inactivity
+- **Idle Timer**: Auto-reset to home screen after 5 minutes of inactivity
 - **Need Help Button**: Easy access to assistance prompts
 - **Clear Messaging**: Intuitive navigation and user feedback
 - **Responsive Design**: Works on tablets and large phone screens
+- **Category Filtering**: Horizontal scrolling category buttons for easy product filtering
 
 ### Technical Features
+- **Supabase Integration**: Direct database queries for products, categories, and checkout
 - **TypeScript**: Full type safety throughout the application
 - **Context API**: Global cart state management
-- **Environment Configuration**: Configurable API endpoints and settings
-- **Mock API**: Built-in mock data for development and testing
+- **Environment Configuration**: Configurable Supabase and legacy API settings
+- **Mock Data Fallback**: Built-in mock data when Supabase is not configured
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 
 ## Project Structure
@@ -35,18 +38,20 @@ src/
 │   ├── ProductCard.tsx # Product display card
 │   └── index.ts        # Component exports
 ├── screens/            # Main application screens
-│   ├── ScanScreen.tsx      # Barcode scanning interface
-│   ├── BrowseScreen.tsx    # Product browsing and search
-│   ├── CartScreen.tsx      # Cart management
-│   ├── CheckoutScreen.tsx  # Order review and payment
-│   ├── SuccessScreen.tsx   # Order completion
-│   └── index.ts            # Screen exports
+│   ├── HomeScreen.tsx     # Welcome/start screen
+│   ├── ScanScreen.tsx     # Optional barcode scanning interface
+│   ├── BrowseScreen.tsx   # Product browsing with category filtering
+│   ├── CartScreen.tsx     # Cart management
+│   ├── CheckoutScreen.tsx # Order review and payment
+│   ├── SuccessScreen.tsx  # Order completion
+│   └── index.ts           # Screen exports
 ├── context/            # React Context providers
 │   └── CartContext.tsx # Global cart state management
 ├── services/           # API and external services
-│   └── api.ts          # API service layer with mock data
+│   ├── api.ts          # Legacy API service layer
+│   └── supabase.ts     # Supabase service with mock fallback
 ├── constants/          # App configuration and constants
-│   ├── config.ts       # Environment and API configuration
+│   ├── config.ts       # Environment and Supabase configuration
 │   └── theme.ts        # Colors, sizes, and styling constants
 ├── types/              # TypeScript type definitions
 │   └── index.ts        # Shared type definitions
@@ -80,16 +85,25 @@ src/
 
 4. Configure your environment variables in `.env`:
    ```env
+   # Supabase Configuration (primary)
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key-here
+   
+   # Legacy API Configuration (deprecated)
    API_BASE=https://api.zenithnutrition.com
    MERCHANT_ID=zenith_store_001
    KIOSK_AUTH_TOKEN=your_jwt_token_or_api_key_here
    KIOSK_ID=kiosk_001
-   IDLE_TIMEOUT_MINUTES=2
+   
+   # App Configuration
+   IDLE_TIMEOUT_MINUTES=5
    AUTO_RESET_ENABLED=true
-   CLOVER_MINI_ENABLED=true
+   CLOVER_MINI_ENABLED=false
    CLOVER_APP_ID=your_clover_app_id
    DEBUG_MODE=false
    ```
+
+   **Note**: If Supabase is not configured, the app will automatically use mock data for development and testing.
 
 ## Development
 
@@ -111,20 +125,76 @@ npm run web
 ### Environment Configuration
 The app uses environment variables for configuration. See `.env.example` for all available options:
 
+#### Supabase Configuration (Recommended)
+- **SUPABASE_URL**: Your Supabase project URL
+- **SUPABASE_ANON_KEY**: Your Supabase anonymous/public key
+
+#### Legacy Configuration
 - **API_BASE**: Backend API base URL
 - **MERCHANT_ID**: Unique merchant identifier
-- **KIOSK_AUTH_TOKEN**: Authentication token for API requests
+#### App Configuration
+- **KIOSK_AUTH_TOKEN**: Authentication token for legacy API requests
 - **KIOSK_ID**: Unique kiosk identifier
-- **IDLE_TIMEOUT_MINUTES**: Minutes before auto-reset (default: 2)
+- **IDLE_TIMEOUT_MINUTES**: Minutes before auto-reset (default: 5)
 - **AUTO_RESET_ENABLED**: Enable/disable idle timeout
 - **CLOVER_MINI_ENABLED**: Enable Clover Mini payment integration
 - **DEBUG_MODE**: Enable debug logging
+
+### Supabase Setup
+To use with a real Supabase instance, you'll need:
+
+1. **Products Table**: Store your product catalog
+   ```sql
+   CREATE TABLE products (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     name TEXT NOT NULL,
+     description TEXT,
+     price DECIMAL(10,2) NOT NULL,
+     upc TEXT UNIQUE,
+     sku TEXT UNIQUE NOT NULL,
+     category TEXT NOT NULL,
+     brand TEXT,
+     image_url TEXT,
+     visible_in_kiosk BOOLEAN DEFAULT true,
+     in_stock BOOLEAN DEFAULT true,
+     stock_quantity INTEGER,
+     created_at TIMESTAMP DEFAULT NOW()
+   );
+   ```
+
+2. **Checkouts Table**: Store transaction records
+   ```sql
+   CREATE TABLE checkouts (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     merchant_id TEXT NOT NULL,
+     kiosk_id TEXT NOT NULL,
+     items JSONB NOT NULL,
+     total DECIMAL(10,2) NOT NULL,
+     payment_method TEXT NOT NULL,
+     payment_status TEXT DEFAULT 'pending',
+     created_at TIMESTAMP DEFAULT NOW()
+   );
+   ```
 
 ### Theme and Branding
 The app uses a consistent theme defined in `src/constants/theme.ts`:
 - **Primary Colors**: Blue (#2B6CB0), Orange (#ED8936), Grey (#4A5568)
 - **Zenith Nutrition Branding**: Logo placeholders and consistent branding
 - **Large Touch Targets**: Minimum 44pt touch targets for accessibility
+
+## Data Flow
+
+### With Supabase (Recommended)
+1. Products are fetched directly from `products` table
+2. Categories are dynamically extracted from product data
+3. Checkouts are stored in `checkouts` table
+4. Real-time data updates possible
+
+### Mock Data Fallback
+When Supabase is not configured, the app uses built-in mock data with:
+- 4 sample products across different categories
+- Simulated checkout processing
+- All core functionality preserved for development
 
 ## API Integration
 
