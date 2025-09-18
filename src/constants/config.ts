@@ -1,18 +1,32 @@
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  API_BASE,
+  MERCHANT_ID,
+  KIOSK_AUTH_TOKEN,
+  KIOSK_ID,
+  IDLE_TIMEOUT_MINUTES,
+  AUTO_RESET_ENABLED,
+  CLOVER_MINI_ENABLED,
+  CLOVER_APP_ID,
+  DEBUG_MODE
+} from '@env';
+
 export const CONFIG = {
   // Supabase Configuration
-  SUPABASE_URL: process.env.SUPABASE_URL || '',
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+  SUPABASE_URL: SUPABASE_URL || '',
+  SUPABASE_ANON_KEY: SUPABASE_ANON_KEY || '',
   
   // Legacy API Configuration (deprecated)
-  API_BASE: process.env.API_BASE || 'https://api.zenithnutrition.com',
-  MERCHANT_ID: process.env.MERCHANT_ID || 'zenith_store_001',
-  KIOSK_AUTH_TOKEN: process.env.KIOSK_AUTH_TOKEN || '',
-  KIOSK_ID: process.env.KIOSK_ID || 'kiosk_001',
-  IDLE_TIMEOUT_MINUTES: parseInt(process.env.IDLE_TIMEOUT_MINUTES || '5', 10),
-  AUTO_RESET_ENABLED: process.env.AUTO_RESET_ENABLED === 'true',
-  CLOVER_MINI_ENABLED: process.env.CLOVER_MINI_ENABLED === 'true',
-  CLOVER_APP_ID: process.env.CLOVER_APP_ID || '',
-  DEBUG_MODE: process.env.DEBUG_MODE === 'true'
+  API_BASE: API_BASE || 'https://api.zenithnutrition.com',
+  MERCHANT_ID: MERCHANT_ID || 'zenith_store_001',
+  KIOSK_AUTH_TOKEN: KIOSK_AUTH_TOKEN || '',
+  KIOSK_ID: KIOSK_ID || 'kiosk_001',
+  IDLE_TIMEOUT_MINUTES: parseInt(IDLE_TIMEOUT_MINUTES || '5', 10),
+  AUTO_RESET_ENABLED: AUTO_RESET_ENABLED === 'true',
+  CLOVER_MINI_ENABLED: CLOVER_MINI_ENABLED === 'true',
+  CLOVER_APP_ID: CLOVER_APP_ID || '',
+  DEBUG_MODE: DEBUG_MODE === 'true'
 };
 
 export const API_ENDPOINTS = {

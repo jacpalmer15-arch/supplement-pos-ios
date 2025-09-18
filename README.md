@@ -105,6 +105,30 @@ src/
 
    **Note**: If Supabase is not configured, the app will automatically use mock data for development and testing.
 
+### Technical Setup
+
+#### Babel Configuration
+The project includes `babel.config.js` configured with the `react-native-dotenv` plugin to enable importing environment variables from `@env`. This configuration is essential for proper environment variable loading in React Native/Expo:
+
+```javascript
+// babel.config.js
+module.exports = function(api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+    plugins: [
+      ['module:react-native-dotenv', {
+        moduleName: '@env',
+        path: '.env'
+      }]
+    ]
+  };
+};
+```
+
+#### TypeScript Support
+Environment variables are typed in `env.d.ts` to provide IntelliSense and type safety when importing from `@env`.
+
 ## Development
 
 ### Running the App
@@ -123,7 +147,11 @@ npm run web
 ```
 
 ### Environment Configuration
-The app uses environment variables for configuration. See `.env.example` for all available options:
+The app uses environment variables for configuration. See `.env.example` for all available options.
+
+**Environment Variable Loading**: This app uses `react-native-dotenv` to load environment variables from `.env` files in React Native/Expo environments. The configuration is already set up in `babel.config.js` to import variables from `@env` instead of `process.env`, which ensures they work correctly across all platforms (iOS, Android, Web).
+
+To verify environment variables are loaded correctly, check the console logs when the app starts - you should see the actual values instead of empty strings.
 
 #### Supabase Configuration (Recommended)
 - **SUPABASE_URL**: Your Supabase project URL
