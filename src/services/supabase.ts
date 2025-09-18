@@ -2,6 +2,9 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { CONFIG } from '../constants/config';
 import { Product, CheckoutRequest, CheckoutResponse, ApiResponse } from '../types';
 
+console.log('SUPABASE_URL:', CONFIG.SUPABASE_URL);
+console.log('SUPABASE_ANON_KEY:', CONFIG.SUPABASE_ANON_KEY);
+
 // Mock data for testing when Supabase is not configured
 const MOCK_PRODUCTS: Product[] = [
   {
@@ -68,8 +71,8 @@ class SupabaseService {
 
   constructor() {
     if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY || 
-        CONFIG.SUPABASE_URL === 'https://your-project.supabase.co' || 
-        CONFIG.SUPABASE_ANON_KEY === 'your-anon-key-here') {
+        CONFIG.SUPABASE_URL === 'https://klsamchwbdrxugdmxpgp.supabase.co' || 
+        CONFIG.SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsc2FtY2h3YmRyeHVnZG14cGdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NDU2NTUsImV4cCI6MjA3MzAyMTY1NX0.TnPtI4yf3LreZslS9AL9cDPE5xQNll9XcHof6JGbPMk') {
       console.warn('Supabase not properly configured, using mock data for testing');
       this.useMockData = true;
     } else {
