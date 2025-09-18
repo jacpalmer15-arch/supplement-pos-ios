@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../components/Header';
 import { Button } from '../components/Button';
 import { useCart } from '../context/CartContext';
-import { apiService } from '../services/api';
+import { supabaseService } from '../services/supabase';
 import { CONFIG } from '../constants/config';
 import { NavigationScreen, CheckoutRequest } from '../types';
 import { COLORS, SIZES } from '../constants/theme';
@@ -44,7 +44,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigate }) =>
         payment_method: CONFIG.CLOVER_MINI_ENABLED ? 'clover_mini' : 'card'
       };
 
-      const response = await apiService.checkout(checkoutRequest);
+      const response = await supabaseService.checkout(checkoutRequest);
 
       if (response.success) {
         if (response.data.clover_payment_required) {
@@ -56,8 +56,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigate }) =>
               {
                 text: 'Payment Completed',
                 onPress: () => {
-                  clearCart();
-                  onNavigate('Success');
+                  showReceiptOption();
                 }
               }
             ],
@@ -65,8 +64,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigate }) =>
           );
         } else {
           // Payment completed immediately
-          clearCart();
-          onNavigate('Success');
+          showReceiptOption();
         }
       } else {
         Alert.alert(
@@ -84,6 +82,86 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigate }) =>
     } finally {
       setProcessing(false);
     }
+  };
+
+  const showReceiptOption = () => {
+    Alert.alert(
+      'Receipt Options',
+      'Would you like to receive a receipt for your purchase?',
+      [
+        {
+          text: 'No Receipt',
+          onPress: () => {
+            clearCart();
+            onNavigate('Success');
+          }
+        },
+        {
+          text: 'Yes, Send Receipt',
+          onPress: () => showReceiptDelivery()
+        }
+      ]
+    );
+  };
+
+  const showReceiptDelivery = () => {
+    Alert.alert(
+      'Receipt Delivery',
+      'How would you like to receive your receipt?',
+      [
+        {
+          text: 'Email',
+          onPress: () => {
+            // Placeholder for email receipt
+            Alert.alert(
+              'Email Receipt',
+              'Email receipt functionality will be implemented here.',
+              [{ 
+                text: 'OK', 
+                onPress: () => {
+                  clearCart();
+                  onNavigate('Success');
+                }
+              }]
+            );
+          }
+        },
+        {
+          text: 'SMS',
+          onPress: () => {
+            // Placeholder for SMS receipt
+            Alert.alert(
+              'SMS Receipt',
+              'SMS receipt functionality will be implemented here.',
+              [{ 
+                text: 'OK', 
+                onPress: () => {
+                  clearCart();
+                  onNavigate('Success');
+                }
+              }]
+            );
+          }
+        },
+        {
+          text: 'Print',
+          onPress: () => {
+            // Placeholder for print receipt
+            Alert.alert(
+              'Print Receipt',
+              'Print receipt functionality will be implemented here.',
+              [{ 
+                text: 'OK', 
+                onPress: () => {
+                  clearCart();
+                  onNavigate('Success');
+                }
+              }]
+            );
+          }
+        }
+      ]
+    );
   };
 
   const handleHelpPress = () => {

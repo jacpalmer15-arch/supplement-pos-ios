@@ -3,6 +3,7 @@ import { StyleSheet, View, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { CartProvider } from './src/context/CartContext';
+import { HomeScreen } from './src/screens/HomeScreen';
 import { ScanScreen } from './src/screens/ScanScreen';
 import { BrowseScreen } from './src/screens/BrowseScreen';
 import { CartScreen } from './src/screens/CartScreen';
@@ -14,14 +15,14 @@ import { COLORS } from './src/constants/theme';
 import { NavigationScreen } from './src/types';
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<NavigationScreen>('Scan');
+  const [currentScreen, setCurrentScreen] = useState<NavigationScreen>('Home');
 
   const handleTimeout = useCallback(() => {
-    if (currentScreen !== 'Scan') {
+    if (currentScreen !== 'Home') {
       Alert.alert(
         'Session Timeout',
-        'Your session has timed out due to inactivity. Returning to scan screen.',
-        [{ text: 'OK', onPress: () => setCurrentScreen('Scan') }],
+        'Your session has timed out due to inactivity. Returning to home screen.',
+        [{ text: 'OK', onPress: () => setCurrentScreen('Home') }],
         { cancelable: false }
       );
     }
@@ -29,7 +30,7 @@ export default function App() {
 
   const { reset: resetIdleTimer } = useIdleTimer(
     handleTimeout,
-    CONFIG.AUTO_RESET_ENABLED && currentScreen !== 'Success'
+    CONFIG.AUTO_RESET_ENABLED && currentScreen !== 'Success' && currentScreen !== 'Home'
   );
 
   const handleNavigate = useCallback((screen: NavigationScreen) => {
@@ -39,6 +40,8 @@ export default function App() {
 
   const renderScreen = () => {
     switch (currentScreen) {
+      case 'Home':
+        return <HomeScreen onNavigate={handleNavigate} />;
       case 'Scan':
         return <ScanScreen onNavigate={handleNavigate} />;
       case 'Browse':
@@ -50,7 +53,7 @@ export default function App() {
       case 'Success':
         return <SuccessScreen onNavigate={handleNavigate} />;
       default:
-        return <ScanScreen onNavigate={handleNavigate} />;
+        return <HomeScreen onNavigate={handleNavigate} />;
     }
   };
 
