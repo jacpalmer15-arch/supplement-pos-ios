@@ -33,13 +33,35 @@ export async function request<T>(
       headers,
     });
 
-    // Parse response
-    const data = await response.json();
+    // Parse response - handle cases where response might not be JSON
+    let data: any = null;
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        if (!response.ok) {
+          return {
+            data: null,
+            error: `HTTP ${response.status}: ${response.statusText}`,
+          };
+        }
+        // If response is ok but JSON parsing failed, return empty data
+        data = null;
+      }
+    } else if (!response.ok) {
+      // Non-JSON error response
+      return {
+        data: null,
+        error: `HTTP ${response.status}: ${response.statusText}`,
+      };
+    }
 
     if (!response.ok) {
       return {
         data: null,
-        error: data.message || `HTTP ${response.status}: ${response.statusText}`,
+        error: data?.message || `HTTP ${response.status}: ${response.statusText}`,
       };
     }
 
