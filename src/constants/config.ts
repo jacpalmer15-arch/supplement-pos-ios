@@ -2,6 +2,7 @@ import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   API_BASE,
+  API_BASE_URL,
   MERCHANT_ID,
   KIOSK_AUTH_TOKEN,
   KIOSK_ID,
@@ -19,6 +20,7 @@ export const CONFIG = {
   
   // Legacy API Configuration (deprecated)
   API_BASE: API_BASE || 'https://api.zenithnutrition.com',
+  API_BASE_URL: API_BASE_URL || 'https://api.zenithnutrition.com',
   MERCHANT_ID: MERCHANT_ID || 'zenith_store_001',
   KIOSK_AUTH_TOKEN: KIOSK_AUTH_TOKEN || '',
   KIOSK_ID: KIOSK_ID || 'kiosk_001',

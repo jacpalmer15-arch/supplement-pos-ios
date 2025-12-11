@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationScreen } from '../types';
 import { COLORS, SIZES } from '../constants/theme';
+import { CONFIG } from '../constants/config';
 
 interface HomeScreenProps {
   onNavigate: (screen: NavigationScreen) => void;
@@ -59,6 +60,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         <Text style={styles.footerText}>
           Need assistance? Please ask a store associate
         </Text>
+        {CONFIG.DEBUG_MODE && (
+          <TouchableOpacity 
+            style={styles.debugButton}
+            onPress={() => onNavigate('Debug')}
+          >
+            <Ionicons name="bug" size={20} color={COLORS.surface} />
+            <Text style={styles.debugButtonText}>Debug Screen</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -161,5 +171,20 @@ const styles = StyleSheet.create({
     fontSize: SIZES.font.md,
     color: COLORS.text.secondary,
     textAlign: 'center',
+  },
+  debugButton: {
+    backgroundColor: COLORS.warning,
+    paddingVertical: SIZES.spacing.sm,
+    paddingHorizontal: SIZES.spacing.md,
+    borderRadius: SIZES.borderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SIZES.spacing.md,
+  },
+  debugButtonText: {
+    color: COLORS.surface,
+    fontSize: SIZES.font.sm,
+    fontWeight: '600',
+    marginLeft: SIZES.spacing.xs,
   },
 });
