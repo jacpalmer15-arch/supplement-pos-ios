@@ -1,9 +1,7 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { CONFIG } from '../constants/config';
 import { Product, CheckoutRequest, CheckoutResponse, ApiResponse } from '../types';
-
-console.log('SUPABASE_URL:', CONFIG.SUPABASE_URL);
-console.log('SUPABASE_ANON_KEY:', CONFIG.SUPABASE_ANON_KEY);
 
 // Mock data for testing when Supabase is not configured
 const MOCK_PRODUCTS: Product[] = [
@@ -70,18 +68,18 @@ class SupabaseService {
   private useMockData: boolean = false;
 
   constructor() {
-    if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY || 
-        CONFIG.SUPABASE_URL === 'https://klsamchwbdrxugdmxpgp.supabase.co' || 
-        CONFIG.SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsc2FtY2h3YmRyeHVnZG14cGdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NDU2NTUsImV4cCI6MjA3MzAyMTY1NX0.TnPtI4yf3LreZslS9AL9cDPE5xQNll9XcHof6JGbPMk') {
-      console.warn('Supabase not properly configured, using mock data for testing');
+    if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
+      console.warn('Supabase not configured, using mock data');
       this.useMockData = true;
-    } else {
-      try {
-        this.client = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-      } catch (error) {
-        console.error('Failed to initialize Supabase client, using mock data:', error);
-        this.useMockData = true;
-      }
+      return;
+    }
+
+    try {
+      // Use the singleton client from lib/supabase to avoid multiple instances
+      this.client = supabase;
+    } catch (error) {
+      console.error('Failed to initialize Supabase client, using mock data:', error);
+      this.useMockData = true;
     }
   }
 
@@ -97,9 +95,25 @@ class SupabaseService {
     try {
       const { data, error } = await this.client!
         .from('products')
-        .select('*')
+        .select(
+          [
+            'id',
+            'clover_item_id',
+            'name',
+            'brand',
+            'description',
+            'image_url',
+            'sku',
+            'upc',
+            'price_cents',
+            'visible_in_kiosk',
+            'active',
+            'category_id',
+            'category:categories(name)'
+          ].join(',')
+        )
         .eq('visible_in_kiosk', true)
-        .eq('in_stock', true)
+        .eq('active', true)
         .order('name');
 
       if (error) {
@@ -110,8 +124,24 @@ class SupabaseService {
         };
       }
 
+      const mapped: Product[] = (data || []).map((p: any) => ({
+        id: p.id,
+        clover_item_id: p.clover_item_id,
+        name: p.name,
+        description: p.description ?? undefined,
+        price: typeof p.price_cents === 'number' ? p.price_cents / 100 : 0,
+        upc: p.upc ?? undefined,
+        sku: p.sku ?? '',
+        category: p.category?.name ?? '',
+        brand: p.brand ?? undefined,
+        image_url: p.image_url ?? undefined,
+        visible_in_kiosk: !!p.visible_in_kiosk,
+        in_stock: true,
+        stock_quantity: undefined,
+      }));
+
       return {
-        data: data || [],
+        data: mapped,
         success: true
       };
     } catch (error) {
@@ -136,10 +166,24 @@ class SupabaseService {
     try {
       const { data, error } = await this.client!
         .from('products')
-        .select('*')
+        .select(
+          [
+            'id',
+            'name',
+            'brand',
+            'description',
+            'image_url',
+            'sku',
+            'upc',
+            'price_cents',
+            'visible_in_kiosk',
+            'active',
+            'category:categories(name)'
+          ].join(',')
+        )
         .eq('upc', upc)
         .eq('visible_in_kiosk', true)
-        .eq('in_stock', true)
+        .eq('active', true)
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
@@ -150,8 +194,25 @@ class SupabaseService {
         };
       }
 
+      const product: Product | null = data
+        ? {
+            id: data.id,
+            name: data.name,
+            description: data.description ?? undefined,
+            price: typeof data.price_cents === 'number' ? data.price_cents / 100 : 0,
+            upc: data.upc ?? undefined,
+            sku: data.sku ?? '',
+            category: data.category?.name ?? '',
+            brand: data.brand ?? undefined,
+            image_url: data.image_url ?? undefined,
+            visible_in_kiosk: !!data.visible_in_kiosk,
+            in_stock: true,
+            stock_quantity: undefined,
+          }
+        : null;
+
       return {
-        data: data || null,
+        data: product,
         success: true
       };
     } catch (error) {
@@ -174,11 +235,26 @@ class SupabaseService {
     }
 
     try {
+      // Prefer categories table
+      const { data: categoriesData, error: catError } = await this.client!
+        .from('categories')
+        .select('name, active')
+        .eq('active', true)
+        .order('name');
+
+      if (!catError && categoriesData) {
+        const names = (categoriesData || [])
+          .map((c: any) => c.name)
+          .filter(Boolean);
+        return { data: names, success: true };
+      }
+
+      // Fallback: derive from products currently visible in kiosk
       const { data, error } = await this.client!
         .from('products')
-        .select('category')
+        .select('category:categories(name), visible_in_kiosk, active')
         .eq('visible_in_kiosk', true)
-        .eq('in_stock', true);
+        .eq('active', true);
 
       if (error) {
         return {
@@ -188,13 +264,8 @@ class SupabaseService {
         };
       }
 
-      // Extract unique categories
-      const categories = [...new Set(data?.map(item => item.category).filter(Boolean))];
-      
-      return {
-        data: categories,
-        success: true
-      };
+      const names = [...new Set((data || []).map((r: any) => r.category?.name).filter(Boolean))];
+      return { data: names, success: true };
     } catch (error) {
       return {
         data: [],

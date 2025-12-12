@@ -245,6 +245,8 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
       <Header 
         title="Browse Products" 
         onHelpPress={handleHelpPress}
+        showHomeButton={true}
+        onHomePress={() => onNavigate('Home')}
         rightContent={
           cart.itemCount > 0 && (
             <Button
@@ -316,13 +318,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.spacing.md,
     paddingVertical: SIZES.spacing.sm,
     marginBottom: SIZES.spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
     elevation: 2
   },
   searchInput: {

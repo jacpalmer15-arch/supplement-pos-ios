@@ -8,11 +8,26 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase, db } from '../lib/supabase';
 import { api } from '../lib/api';
+import { checkoutService } from '../services/checkout';
+import { authService } from '../services/auth';
 import { COLORS } from '../constants/theme';
+import { NavigationScreen } from '../types';
+import {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  API_BASE_URL,
+  BACKEND_BASE,
+  KIOSK_AUTH_TOKEN,
+} from '@env';
 
-export default function DebugScreen() {
+interface DebugScreenProps {
+  onNavigate?: (screen: NavigationScreen) => void;
+}
+
+export default function DebugScreen({ onNavigate }: DebugScreenProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string>('');
   const [upcInput, setUpcInput] = useState('123456789012');
@@ -44,6 +59,15 @@ export default function DebugScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
+        {onNavigate && (
+          <TouchableOpacity
+            style={styles.homeButton}
+            onPress={() => onNavigate('Home')}
+          >
+            <Ionicons name="home" size={24} color="white" />
+            <Text style={styles.homeButtonText}>Home</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.title}>Debug & Test Screen</Text>
         <Text style={styles.subtitle}>
           Exercise Supabase queries and server API endpoints
@@ -100,6 +124,22 @@ export default function DebugScreen() {
         >
           <Text style={styles.buttonText}>Test: Supabase Connection</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => runTest('Get Products (API Shape)', () => db.getProductsApiShape())}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>Query: Products (API Shape)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => runTest('Categories via Table (fallback to products)', () => db.getCategories())}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>Query: Categories</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
@@ -139,18 +179,56 @@ export default function DebugScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Checkout & Auth Tests</Text>
+        
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
+            runTest('Test Checkout (Sample Order)', async () => {
+              return await checkoutService.testCheckout();
+            })
+          }
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>Test: Checkout API</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
+            runTest('Check Auth Status', async () => {
+              const user = authService.getUser();
+              const token = await authService.getAccessToken();
+              return {
+                isAuthenticated: authService.isAuthenticated(),
+                user: user ? { email: user.email, id: user.id } : null,
+                hasToken: !!token,
+              };
+            })
+          }
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>Test: Auth Status</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Environment Configuration</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => runTest('Show Environment Variables', async () => {
-            const { SUPABASE_URL, SUPABASE_ANON_KEY, API_BASE_URL, KIOSK_AUTH_TOKEN } = await import('@env');
-            return {
+          onPress={() =>
+            runTest('Show Environment Variables', async () => ({
               SUPABASE_URL: SUPABASE_URL || '(not set)',
-              SUPABASE_ANON_KEY: SUPABASE_ANON_KEY ? '***' + SUPABASE_ANON_KEY.slice(-8) : '(not set)',
+              SUPABASE_ANON_KEY: SUPABASE_ANON_KEY
+                ? '***' + SUPABASE_ANON_KEY.slice(-8)
+                : '(not set)',
+              BACKEND_BASE: BACKEND_BASE || '(not set)',
               API_BASE_URL: API_BASE_URL || '(not set)',
-              KIOSK_AUTH_TOKEN: KIOSK_AUTH_TOKEN ? '***' + KIOSK_AUTH_TOKEN.slice(-8) : '(not set)',
-            };
-          })}
+              KIOSK_AUTH_TOKEN: KIOSK_AUTH_TOKEN
+                ? '***' + KIOSK_AUTH_TOKEN.slice(-8)
+                : '(not set)',
+            }))
+          }
           disabled={loading}
         >
           <Text style={styles.buttonText}>Show Environment Config</Text>
@@ -159,7 +237,7 @@ export default function DebugScreen() {
 
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+          <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       )}
 
@@ -181,9 +259,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.primary,
     padding: 20,
     paddingTop: 60,
+    position: 'relative',
+  },
+  homeButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  homeButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
   },
   title: {
     fontSize: 28,
@@ -209,11 +306,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.PRIMARY,
+    color: COLORS.primary,
     marginBottom: 12,
   },
   button: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.primary,
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
@@ -252,16 +349,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     maxHeight: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   resultTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.PRIMARY,
+    color: COLORS.primary,
     marginBottom: 12,
   },
   resultScroll: {

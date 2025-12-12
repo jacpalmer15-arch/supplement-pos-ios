@@ -1,5 +1,6 @@
 export interface Product {
   id: string;
+  clover_item_id?: string;
   name: string;
   description?: string;
   price: number;
@@ -16,6 +17,11 @@ export interface Product {
 export interface CartItem {
   product: Product;
   quantity: number;
+  clover_item_id?: string; // For checkout API compatibility
+  name?: string;
+  price?: number;
+  category?: string;
+  sku?: string;
 }
 
 export interface Cart {

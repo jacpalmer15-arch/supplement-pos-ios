@@ -164,7 +164,12 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      <Header title="Scan Products" onHelpPress={handleHelpPress} />
+      <Header 
+        title="Scan Product" 
+        onHelpPress={handleHelpPress}
+        showHomeButton={true}
+        onHomePress={() => onNavigate('Home')}
+      />
       
       <View style={styles.scannerContainer}>
         <BarCodeScanner

@@ -12,6 +12,8 @@ interface HeaderProps {
   title: string;
   showBackButton?: boolean;
   onBackPress?: () => void;
+  showHomeButton?: boolean;
+  onHomePress?: () => void;
   rightContent?: React.ReactNode;
   showHelpButton?: boolean;
   onHelpPress?: () => void;
@@ -21,6 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   title,
   showBackButton = false,
   onBackPress,
+  showHomeButton = true,
+  onHomePress,
   rightContent,
   showHelpButton = true,
   onHelpPress
@@ -34,6 +38,15 @@ export const Header: React.FC<HeaderProps> = ({
             onPress={onBackPress}
           >
             <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
+          </TouchableOpacity>
+        )}
+        {showHomeButton && !showBackButton && (
+          <TouchableOpacity
+            style={styles.homeButton}
+            onPress={onHomePress}
+          >
+            <Ionicons name="home" size={24} color={COLORS.primary} />
+            <Text style={styles.homeText}>Home</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -99,6 +112,19 @@ const styles = StyleSheet.create({
     padding: SIZES.spacing.sm,
     borderRadius: SIZES.radius.md,
     backgroundColor: COLORS.background
+  },
+  homeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SIZES.spacing.sm,
+    borderRadius: SIZES.radius.md,
+    backgroundColor: COLORS.background
+  },
+  homeText: {
+    fontSize: SIZES.font.sm,
+    color: COLORS.primary,
+    marginLeft: SIZES.spacing.xs,
+    fontWeight: '600'
   },
   helpButton: {
     flexDirection: 'row',

@@ -1,0 +1,86 @@
+# Zenith Copilot Frontend Tests and CI Plan
+
+## Overview
+This document outlines the implementation plan for comprehensive testing and CI/CD setup for the copilot-frontend Next.js TypeScript application.
+
+## Testing Requirements
+
+### Component Testing (Jest + React Testing Library)
+- Unit tests for UI components in `/web/components/ui/`
+  - Button, Card, Input, Label, Select, Switch, Table components
+  - Badge, Sonner (toast) components
+- Component tests for product-related components in `/web/components/products/`
+  - Data table columns configuration
+  - Product data table component
+
+### Integration Testing
+- Page-level integration tests for key application pages:
+  - Home page (`/web/app/page.tsx`)
+  - Products listing page (`/web/app/products/`)
+  - Individual product page (`/web/app/products/[id]/`)
+  - Inventory page (`/web/app/inventory/`)
+  - Sync page (`/web/app/sync/`)
+
+### API Route Testing
+- Test API endpoints:
+  - Products CRUD operations (`/web/app/api/products/`)
+  - Inventory management (`/web/app/api/inventory/`)
+  - Categories management (`/web/app/api/categories/`)
+  - Sync operations (`/web/app/api/products/sync/`)
+
+## CI/CD Requirements
+
+### GitHub Actions Workflow
+- Automated testing on pull requests and main branch pushes
+- Pipeline stages:
+  1. **Lint**: ESLint code quality checks
+  2. **Test**: Jest unit and integration test execution
+  3. **Build**: Next.js production build verification
+  4. **Type Check**: TypeScript compilation verification
+
+### Test Coverage
+- Minimum 80% code coverage for components
+- Integration test coverage for critical user flows
+- API endpoint test coverage
+
+## Implementation Strategy
+
+### Phase 1: Testing Infrastructure Setup
+1. Install testing dependencies (Jest, React Testing Library, @testing-library/jest-dom)
+2. Configure Jest with Next.js integration
+3. Set up test environment and utilities
+4. Create test script commands in package.json
+
+### Phase 2: Component Testing
+1. Create test files for UI components
+2. Test component rendering, props handling, and user interactions
+3. Mock external dependencies (Supabase, React Query)
+
+### Phase 3: Integration Testing  
+1. Create page-level integration tests
+2. Test user workflows and data fetching
+3. Mock API responses for consistent testing
+
+### Phase 4: CI/CD Setup
+1. Create GitHub Actions workflow file
+2. Configure automated testing pipeline
+3. Set up build and deployment verification
+
+### Phase 5: Documentation
+1. Update README.md with testing instructions
+2. Document CI/CD process
+3. Add contribution guidelines for testing
+
+## Technology Stack
+- **Testing Framework**: Jest
+- **Component Testing**: React Testing Library
+- **Mocking**: Jest mocks for Supabase and external APIs
+- **CI/CD**: GitHub Actions
+- **Code Coverage**: Jest coverage reports
+
+## Success Criteria
+- All tests pass consistently
+- CI pipeline runs successfully on all PRs
+- Code coverage meets minimum thresholds
+- Documentation is comprehensive and up-to-date
+- Developer experience is streamlined for testing

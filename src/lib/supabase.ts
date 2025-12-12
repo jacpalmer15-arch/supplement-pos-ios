@@ -9,8 +9,9 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false
-    }
+      // Align with Next.js client behavior for session handling
+      detectSessionInUrl: true,
+    },
   }
 );
 
@@ -22,7 +23,7 @@ export const db = {
       .from('products')
       .select('*')
       .eq('visible_in_kiosk', true)
-      .eq('in_stock', true)
+      .eq('active', true)
       .order('name');
 
     if (error) {
@@ -31,6 +32,55 @@ export const db = {
     }
 
     return { data: data || [], error: null };
+  },
+
+  // Get products in API-friendly shape used by Next.js web app
+  async getProductsApiShape() {
+    const { data, error } = await supabase
+      .from('products')
+      .select(
+        [
+          'clover_item_id',
+          'name',
+          'category_id',
+          'sku',
+          'upc',
+          'price_cents',
+          'cost_cents',
+          'visible_in_kiosk',
+        ].join(',')
+      )
+      .eq('visible_in_kiosk', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching products (API shape):', error);
+      return { data: [], error };
+    }
+
+    // If your table stores price in dollars, map to cents
+    const mapped = (data || []).map((p: any) => ({
+      clover_item_id: p.clover_item_id,
+      name: p.name,
+      category_id: p.category_id ?? null,
+      sku: p.sku ?? null,
+      upc: p.upc ?? null,
+      price_cents:
+        p.price_cents !== undefined && p.price_cents !== null
+          ? p.price_cents
+          : typeof p.price === 'number'
+          ? Math.round(p.price * 100)
+          : null,
+      cost_cents:
+        p.cost_cents !== undefined && p.cost_cents !== null
+          ? p.cost_cents
+          : typeof p.cost === 'number'
+          ? Math.round(p.cost * 100)
+          : null,
+      visible_in_kiosk: !!p.visible_in_kiosk,
+    }));
+
+    return { data: mapped, error: null };
   },
 
   // Get product by UPC (for barcode scanning)
@@ -53,6 +103,19 @@ export const db = {
 
   // Get unique categories from products
   async getCategories() {
+    // Prefer categories table if available, else fall back to product.category
+    const { data: categoriesTable, error: catErr } = await supabase
+      .from('categories')
+      .select('id, name')
+      .order('name');
+
+    if (!catErr && Array.isArray(categoriesTable) && categoriesTable.length > 0) {
+      return {
+        data: categoriesTable.map((c: any) => c.name).filter(Boolean),
+        error: null,
+      };
+    }
+
     const { data, error } = await supabase
       .from('products')
       .select('category')

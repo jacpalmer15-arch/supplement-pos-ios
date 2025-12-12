@@ -11,9 +11,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../components/Header';
 import { Button } from '../components/Button';
 import { useCart } from '../context/CartContext';
-import { supabaseService } from '../services/supabase';
+import { checkoutService } from '../services/checkout';
 import { CONFIG } from '../constants/config';
-import { NavigationScreen, CheckoutRequest } from '../types';
+import { NavigationScreen, CartItem } from '../types';
 import { COLORS, SIZES } from '../constants/theme';
 
 interface CheckoutScreenProps {
@@ -32,40 +32,21 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigate }) =>
     setProcessing(true);
 
     try {
-      const checkoutRequest: CheckoutRequest = {
-        merchant_id: CONFIG.MERCHANT_ID,
-        kiosk_id: CONFIG.KIOSK_ID,
-        items: cart.items.map(item => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price: item.product.price
-        })),
-        total: cart.total,
-        payment_method: CONFIG.CLOVER_MINI_ENABLED ? 'clover_mini' : 'card'
-      };
+      // Transform cart items to include clover_item_id for checkout
+      const checkoutItems: CartItem[] = cart.items.map(item => ({
+        ...item,
+        clover_item_id: item.product.clover_item_id || item.product.id, // Use actual clover_item_id
+        name: item.product.name,
+        price: Math.round(item.product.price * 100), // Convert to cents
+        category: item.product.category,
+        sku: item.product.sku,
+      }));
 
-      const response = await supabaseService.checkout(checkoutRequest);
+      const response = await checkoutService.checkout(checkoutItems);
 
       if (response.success) {
-        if (response.data.clover_payment_required) {
-          // Show Clover Mini payment instruction
-          Alert.alert(
-            'Complete Payment',
-            'Please complete your payment on the Clover Mini device.',
-            [
-              {
-                text: 'Payment Completed',
-                onPress: () => {
-                  showReceiptOption();
-                }
-              }
-            ],
-            { cancelable: false }
-          );
-        } else {
-          // Payment completed immediately
-          showReceiptOption();
-        }
+        // Checkout successful
+        showReceiptOption();
       } else {
         Alert.alert(
           'Checkout Error',
@@ -183,6 +164,8 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigate }) =>
           title="Checkout"
           showBackButton
           onBackPress={() => onNavigate('Cart')}
+          showHomeButton={true}
+          onHomePress={() => onNavigate('Home')}
           onHelpPress={handleHelpPress}
         />
         <View style={styles.emptyContainer}>
@@ -208,6 +191,8 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigate }) =>
         title="Checkout"
         showBackButton
         onBackPress={() => onNavigate('Cart')}
+        showHomeButton={true}
+        onHomePress={() => onNavigate('Home')}
         onHelpPress={handleHelpPress}
       />
       
@@ -337,13 +322,7 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.radius.md,
     padding: SIZES.spacing.lg,
     marginBottom: SIZES.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.1)',
     elevation: 5
   },
   sectionTitle: {

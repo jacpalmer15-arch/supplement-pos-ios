@@ -13,9 +13,10 @@ import { CONFIG } from '../constants/config';
 
 interface HomeScreenProps {
   onNavigate: (screen: NavigationScreen) => void;
+  onLogout?: () => void;
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onLogout }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -60,15 +61,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         <Text style={styles.footerText}>
           Need assistance? Please ask a store associate
         </Text>
-        {CONFIG.DEBUG_MODE && (
-          <TouchableOpacity 
-            style={styles.debugButton}
-            onPress={() => onNavigate('Debug')}
-          >
-            <Ionicons name="bug" size={20} color={COLORS.surface} />
-            <Text style={styles.debugButtonText}>Debug Screen</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.footerButtons}>
+          {CONFIG.DEBUG_MODE && (
+            <TouchableOpacity 
+              style={styles.debugButton}
+              onPress={() => onNavigate('Debug')}
+            >
+              <Ionicons name="bug" size={20} color={COLORS.surface} />
+              <Text style={styles.debugButtonText}>Debug Screen</Text>
+            </TouchableOpacity>
+          )}
+          {onLogout && (
+            <TouchableOpacity 
+              style={styles.logoutButton}
+              onPress={onLogout}
+            >
+              <Ionicons name="log-out" size={20} color={COLORS.error} />
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -126,13 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.borderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: COLORS.text.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(51, 51, 51, 0.15)',
     elevation: 8,
     marginBottom: SIZES.spacing.xl * 2,
     minWidth: 280,
@@ -172,6 +178,11 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     textAlign: 'center',
   },
+  footerButtons: {
+    flexDirection: 'row',
+    gap: SIZES.spacing.md,
+    marginTop: SIZES.spacing.md,
+  },
   debugButton: {
     backgroundColor: COLORS.warning,
     paddingVertical: SIZES.spacing.sm,
@@ -179,10 +190,25 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.borderRadius.md,
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SIZES.spacing.md,
   },
   debugButtonText: {
     color: COLORS.surface,
+    fontSize: SIZES.font.sm,
+    fontWeight: '600',
+    marginLeft: SIZES.spacing.xs,
+  },
+  logoutButton: {
+    backgroundColor: COLORS.surface,
+    paddingVertical: SIZES.spacing.sm,
+    paddingHorizontal: SIZES.spacing.md,
+    borderRadius: SIZES.borderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.error,
+  },
+  logoutButtonText: {
+    color: COLORS.error,
     fontSize: SIZES.font.sm,
     fontWeight: '600',
     marginLeft: SIZES.spacing.xs,

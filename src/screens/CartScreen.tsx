@@ -190,6 +190,8 @@ export const CartScreen: React.FC<CartScreenProps> = ({ onNavigate }) => {
         title="Shopping Cart"
         showBackButton
         onBackPress={() => onNavigate('Scan')}
+        showHomeButton={true}
+        onHomePress={() => onNavigate('Home')}
         onHelpPress={handleHelpPress}
       />
       
@@ -224,13 +226,7 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.spacing.sm,
     padding: SIZES.spacing.md,
     borderRadius: SIZES.radius.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.1)',
     elevation: 5
   },
   productImage: {
