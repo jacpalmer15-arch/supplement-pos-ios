@@ -9,7 +9,9 @@ import {
   Alert,
   RefreshControl,
   ScrollView,
-  TouchableOpacity
+  TouchableOpacity,
+  Dimensions,
+  useWindowDimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../components/Header';
@@ -33,6 +35,13 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { addItem, cart } = useCart();
+  const { width } = useWindowDimensions();
+  
+  // Calculate number of columns based on screen width
+  // Target: ~200-250px per item for optimal viewing
+  const ITEM_MIN_WIDTH = 200;
+  const ITEM_PADDING = SIZES.spacing.md * 2; // Total horizontal padding
+  const numColumns = Math.max(2, Math.floor(width / (ITEM_MIN_WIDTH + ITEM_PADDING)));
 
   useEffect(() => {
     loadProducts();
@@ -129,7 +138,7 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
   };
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <View style={styles.productContainer}>
+    <View style={[styles.productContainer, { flex: 1 / numColumns }]}>
       <ProductCard
         product={item}
         onAddToCart={handleAddToCart}
@@ -262,7 +271,8 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({ onNavigate }) => {
         data={filteredProducts}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
-        numColumns={2}
+        numColumns={numColumns}
+        key={`${numColumns}-columns`}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={styles.listContent}
@@ -335,8 +345,8 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary
   },
   productContainer: {
-    flex: 0.5,
-    marginHorizontal: SIZES.spacing.xs
+    marginHorizontal: SIZES.spacing.xs,
+    marginBottom: SIZES.spacing.md
   },
   emptyContainer: {
     alignItems: 'center',
