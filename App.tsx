@@ -9,6 +9,7 @@ import { BrowseScreen } from './src/screens/BrowseScreen';
 import { CartScreen } from './src/screens/CartScreen';
 import { CheckoutScreen } from './src/screens/CheckoutScreen';
 import { SuccessScreen } from './src/screens/SuccessScreen';
+import { DebugScreen } from './src/screens';
 import { useIdleTimer } from './src/utils/useIdleTimer';
 import { CONFIG } from './src/constants/config';
 import { COLORS } from './src/constants/theme';
@@ -52,6 +53,8 @@ export default function App() {
         return <CheckoutScreen onNavigate={handleNavigate} />;
       case 'Success':
         return <SuccessScreen onNavigate={handleNavigate} />;
+      case 'Debug':
+        return <DebugScreen />;
       default:
         return <HomeScreen onNavigate={handleNavigate} />;
     }
